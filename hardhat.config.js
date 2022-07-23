@@ -37,4 +37,15 @@ module.exports = {
             default: 1,
         },
     },
+    gasReporter: {
+        enabled: process.env.REPORT_GAS !== undefined,
+        currency: "USD",
+        noColors: true,
+        coinmarketcap: COINMARKETCAP_API_KEY,
+        outputFile: "gas-report.txt",
+        token: "ETH",
+    },
+    mocha: {
+        timeout: 300000, // 5 minutes
+    },
 }

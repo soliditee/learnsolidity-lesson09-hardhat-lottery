@@ -74,10 +74,9 @@ contract Lottery is VRFConsumerBaseV2, KeeperCompatibleInterface {
      * @dev
      */
     function checkUpkeep(
-        bytes calldata /* checkData */
+        bytes memory /* checkData */
     )
-        external
-        view
+        public
         override
         returns (
             bool upkeepNeeded,
@@ -95,7 +94,20 @@ contract Lottery is VRFConsumerBaseV2, KeeperCompatibleInterface {
         bytes calldata /* performData */
     ) external override {
         // Call external function by adding "this." before function name
-        (bool isUpkeepNeeded, ) = this.checkUpkeep("");
+        (bool isUpkeepNeeded, ) = checkUpkeep("");
+        if (!isUpkeepNeeded) {
+            revert Lottery__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_status));
+        }
+        // Will revert if subscription is not set and funded.
+        s_status = LotteryStatus.CALCULATING;
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(i_gasLane, i_subscriptionId, REQUEST_CONFIRMATIONS, i_callbackGasLimit, NUM_WORDS);
+        emit RequestedRandomWinner(requestId);
+    }
+
+    // Add this new function without a parameter to bypass the new interface on keepers.chain.link
+    function triggerUpKeep() external {
+        // Call external function by adding "this." before function name
+        (bool isUpkeepNeeded, ) = checkUpkeep("");
         if (!isUpkeepNeeded) {
             revert Lottery__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_status));
         }
@@ -144,5 +156,9 @@ contract Lottery is VRFConsumerBaseV2, KeeperCompatibleInterface {
 
     function getLatestTimestamp() public view returns (uint256) {
         return s_lastTimestamp;
+    }
+
+    function getInterval() public view returns (uint256) {
+        return i_interval;
     }
 }
